@@ -2,6 +2,8 @@ package com.hongmk.hybridtest;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -23,8 +25,8 @@ import java.net.URLDecoder;
 public class MainActivity extends AppCompatActivity {
     private static final String HOME_URL = "http://172.16.2.8:9000/#!/";
     private static final String SIGNUP_URL = "http://172.16.2.8:9000/#!/signup";
-    private static final String USERLIST_URL ="http://172.16.2.8:9000/#!/user/list";
-    private static final String LOGIN_URL ="http://172.16.2.8:9000/#!/user/login";
+    private static final String USERLIST_URL = "http://172.16.2.8:9000/#!/user/list";
+    private static final String LOGIN_URL = "http://172.16.2.8:9000/#!/user/login";
     private WebView webview;
 
     //dialog 용으로만 주로사용
@@ -53,9 +55,9 @@ public class MainActivity extends AppCompatActivity {
 
             Log.i("URL=", url);
 
-            if(url.equals("login:")) {
+            if (url.equals("login:")) {
                 LayoutInflater layoutInflater =
-                        (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 final View loginView = layoutInflater.inflate(R.layout.login, null); //값을 꺼내려면 final을 붙여야함
 
 
@@ -66,15 +68,15 @@ public class MainActivity extends AppCompatActivity {
                 loginDialog.setPositiveButton("로그인", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        TextView idText = (TextView)loginView.findViewById(R.id.user_id);
-                                                TextView passwordText = (TextView)loginView.findViewById(R.id.user_password);
-                                                Toast.makeText(MainActivity.this, idText.getText()+"/"+
-                                                            passwordText.getText(), Toast.LENGTH_LONG).show();
+                        TextView idText = (TextView) loginView.findViewById(R.id.user_id);
+                        TextView passwordText = (TextView) loginView.findViewById(R.id.user_password);
+                        Toast.makeText(MainActivity.this, idText.getText() + "/" +
+                                passwordText.getText(), Toast.LENGTH_LONG).show();
 
                         webview.loadUrl(USERLIST_URL);
                     }
                 });
-                loginDialog.setNegativeButton("취소", new DialogInterface.OnClickListener(){
+                loginDialog.setNegativeButton("취소", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         webview.loadUrl(LOGIN_URL);
@@ -85,19 +87,19 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 String urls[] = url.split(":");
 
-                if (urls.length >2 && urls[1].equals("detail")) {
+                if (urls.length > 2 && urls[1].equals("detail")) {
                     String params[] = urls[2].split("&");
-                    Log.i("urls[2]",urls[2]);
+                    Log.i("urls[2]", urls[2]);
                     try {
                         params[1] = URLDecoder.decode(params[1], "utf-8");
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
-                    Log.i("params[0]",params[0]);
-                    Log.i("params[1]",params[1]);
-                    Log.i("params[2]",params[2]);
-                    LinearLayout popup = (LinearLayout)findViewById(R.id.popup);
-                    TextView popupText = (TextView)findViewById(R.id.popup_text);
+                    Log.i("params[0]", params[0]);
+                    Log.i("params[1]", params[1]);
+                    Log.i("params[2]", params[2]);
+                    LinearLayout popup = (LinearLayout) findViewById(R.id.popup);
+                    TextView popupText = (TextView) findViewById(R.id.popup_text);
                     popup.setVisibility(View.VISIBLE);
                     popupText.setText(params[1]);
 
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        webview = (WebView)findViewById(R.id.webview);
+        webview = (WebView) findViewById(R.id.webview);
 
         WebSettings webSettings = webview.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -122,7 +124,17 @@ public class MainActivity extends AppCompatActivity {
         webview.setWebViewClient(new MyWebViewClient());
         webview.loadUrl(HOME_URL);
 
+
+        //토큰값이 없으면 로그인화면으로 이동
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        if (pref.getString("token", "").equals("")) {
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+        }
+
     }
+
 
     public void goHome(View view) {
         webview.loadUrl(HOME_URL+"?os=android"); //안드로이드에서 접속을 웹페이지쪽에 보내줄때 사용
@@ -145,4 +157,12 @@ public class MainActivity extends AppCompatActivity {
         popup.setVisibility(View.GONE);
     }
 
+    //로그아웃
+    public void logout(View view) {
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.remove("token");
+        editor.commit();
+        finish();
+    }
 }
